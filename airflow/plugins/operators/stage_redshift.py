@@ -3,9 +3,9 @@ from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
+
 class StageToRedshiftOperator(BaseOperator):
     ui_color = '#358140'
-    template_fields = ("s3_key",)
     copy_sql = """
     COPY {}
     FROM '{}'
@@ -13,24 +13,6 @@ class StageToRedshiftOperator(BaseOperator):
     SECRET_ACCESS_KEY '{}'
     JSON '{}'
     """
-
-    # from lesson 4
-    #     staging_events_copy = ("""
-    # COPY staging_events FROM '{}'
-    # CREDENTIALS 'aws_iam_role={}'
-    # json '{}'
-    # region 'us-west-2';
-    # """).format(config.get('S3', 'LOG_DATA'),
-    #             config.get('DWH', 'ROLE_ARN'),
-    #             config.get('S3', 'LOG_JSONPATH'))
-    #
-    # staging_songs_copy = ("""
-    # COPY staging_songs FROM '{}'
-    # CREDENTIALS 'aws_iam_role={}'
-    # json 'auto'
-    # region 'us-west-2';
-    # """).format(config.get('S3', 'SONG_DATA'),
-    #             config.get('DWH', 'ROLE_ARN'))
 
     @apply_defaults
     def __init__(self,
@@ -58,10 +40,16 @@ class StageToRedshiftOperator(BaseOperator):
 
         self.log.info("Clearing data from " +
                       f"Redshift table: {self.table}")
-        redshift.run("DELETE FROM {}".format(self.table))
+        redshift.run(f"DELETE FROM {self.table}")
 
         self.log.info("Copying data from S3 to Redshift")
-        rendered_key = self.s3_key.format(**context)
+        # need to put in year/month/hour (or something)
+        execution_date = context['ds']
+        rendered_key = self.s3_key.format(execution_date.year,
+                                          execution_date.month,
+                                          execution_date.year,
+                                          execution_date.month,
+                                          execution_date.day)
         s3_path = "s3://{}/{}".format(self.s3_bucket, rendered_key)
         formatted_sql = StageToRedshiftOperator.copy_sql.format(
             self.table,
