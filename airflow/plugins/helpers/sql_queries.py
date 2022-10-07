@@ -47,3 +47,11 @@ INSERT INTO songs VALUES (
                extract(month from start_time), extract(year from start_time), extract(dayofweek from start_time)
         FROM songplays
     """)
+
+    quality_checks = [
+        "SELECT COUNT(*) FROM songplays",
+        "SELECT COUNT(*) FROM songs",
+        "SELECT COUNT(*) FROM artists",
+        "SELECT COUNT(*) FROM time",
+        "SELECT COUNT(*) FROM users"
+    ]

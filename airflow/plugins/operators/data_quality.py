@@ -11,19 +11,24 @@ class DataQualityOperator(BaseOperator):
     def __init__(self,
                  redshift_conn_id="",
                  sql=[""],
-                 expected=[0],
+                 expected="",
                  *args, **kwargs):
 
         super(DataQualityOperator, self).__init__(*args, **kwargs)
         self.redshift_conn_id = redshift_conn_id
         self.sql = sql
         self.expected = expected
-        if len(sql) != len(expected):
-            raise ValueError("sql and expected should be the same length")
+        if expected == "":
+            expected = [(0, "gt")] * len(sql)
+        if len(expected) != len(sql):
+            raise ValueError("expected and sql must be the same length")
 
     def execute(self, context):
+
         self.log.info('Running Data Quality Checks')
+
         redshift_hook = PostgresHook(self.redshift_conn_id)
+
         for i in range(len(self.sql)):
 
             records = redshift_hook.get_records(self.sql[i])
@@ -32,8 +37,20 @@ class DataQualityOperator(BaseOperator):
                                  "no results returned")
 
             num_records = records[0][0]
-            if num_records != self.expected[i]:
-                raise ValueError("Data quality check failed: " +
-                                 "unexpected value returned")
+            on_error_string = f"Data quality check {i} failed: "
+            if self.expected[i][1] == "eq":
+                if not num_records == self.expected[i]:
+                    raise ValueError(on_error_string +
+                                     "unexpected value returned")
+
+            elif self.expected[i][1] == "gt":
+                if not num_records > self.expected[i]:
+                    raise ValueError(on_error_string +
+                                     "unexpected value returned")
+
+            elif self.expected[i][1] == "lt":
+                if not num_records < self.expected[i]:
+                    raise ValueError(on_error_string +
+                                     "unexpected value returned")
 
         pass
