@@ -1,5 +1,6 @@
 class SqlQueries:
     songplay_table_insert = ("""
+INSERT INTO songplays VALUES (
         SELECT
                 md5(events.sessionid || events.start_time) songplay_id,
                 events.start_time, 
@@ -17,21 +18,27 @@ class SqlQueries:
             ON events.song = songs.title
                 AND events.artist = songs.artist_name
                 AND events.length = songs.duration
+)
     """)
 
     user_table_insert = ("""
-        SELECT distinct userid, firstname, lastname, gender, level
+INSERT INTO users VALUES (
+        SELECT DISTINCT userid, firstname, lastname, gender, level
         FROM staging_events
         WHERE page='NextSong'
+)
+ON CONFLICT (userid) DO UPDATE SET level = EXCLUDED.level
     """)
 
     song_table_insert = ("""
-        SELECT distinct song_id, title, artist_id, year, duration
+INSERT INTO songs VALUES (
+        SELECT DISTINCT song_id, title, artist_id, year, duration
         FROM staging_songs
+)
     """)
 
     artist_table_insert = ("""
-        SELECT distinct artist_id, artist_name, artist_location, artist_latitude, artist_longitude
+        SELECT DISTINCT artist_id, artist_name, artist_location, artist_latitude, artist_longitude
         FROM staging_songs
     """)
 
