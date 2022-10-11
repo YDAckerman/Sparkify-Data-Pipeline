@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS public.artists (
 );
 
 CREATE TABLE IF NOT EXISTS public.songplays (
-	playid varchar(32) NOT NULL,
+	playid BIGINT IDENTITY(0,1) NOT NULL,
 	start_time timestamp NOT NULL,
 	userid int4 NOT NULL,
 	"level" varchar(256),
@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS public."time" (
 
 CREATE TABLE IF NOT EXISTS public.users (
 	userid int4 NOT NULL,
+    last_update int8 NOT NULL,
 	first_name varchar(256),
 	last_name varchar(256),
 	gender varchar(256),
