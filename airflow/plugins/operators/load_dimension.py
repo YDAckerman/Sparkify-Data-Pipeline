@@ -1,8 +1,6 @@
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
-from datetime import datetime
-
 
 class LoadDimensionOperator(BaseOperator):
 
@@ -29,13 +27,16 @@ class LoadDimensionOperator(BaseOperator):
         # create redshift hook
         redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
 
-        prev_success = context.get('prev_start_date_success')
+        prev_success = context.get('prev_execution_date_success')
+        self.log.info("Previous Completion Interval Start: " + str(prev_success))
+
         if self.run_once and prev_success:
+            # if this task has been successful, do not run again
             self.log.info("Task set to run once. Skipping.")
         else:
             if self.overwrite:
-                self.log.info("Table is set to be overwritten. Clearing data from " +
-                              f"table: {self.table}")
+                self.log.info("Table is set to be overwritten. " +
+                              f"Clearing data from table: {self.table}")
                 redshift.run(f"DELETE FROM {self.table}")
 
             self.log.info(f'Loading table {self.table}')

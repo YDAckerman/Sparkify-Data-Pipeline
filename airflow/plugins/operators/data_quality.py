@@ -6,7 +6,7 @@ from airflow.utils.decorators import apply_defaults
 class DataQualityOperator(BaseOperator):
 
     ui_color = '#89DA59'
-    NO_RESULTS  = 'no results returned.'
+    NO_RESULTS = 'no results returned.'
     UNEXP_VALUE = 'unexpected value returned.'
     UNEXP_OP = 'unexpected operation requested.'
 
@@ -20,12 +20,12 @@ class DataQualityOperator(BaseOperator):
         super(DataQualityOperator, self).__init__(*args, **kwargs)
         self.redshift_conn_id = redshift_conn_id
         self.sql = sql
-        
+
         if len(expected) == 1 and expected[0] == "":
             expected = [(0, 'gt')] * len(sql)
 
         self.expected = expected
-            
+
         if len(expected) != len(sql):
             raise ValueError("expected and sql must be the same length")
 
@@ -47,9 +47,9 @@ class DataQualityOperator(BaseOperator):
             if len(records) < 1 or len(records[0]) < 1:
                 raise ValueError(on_error_string + self.NO_RESULTS)
 
-            if self.expected[i][1] not in ['gt', 'eq', 'lt']:  
+            if self.expected[i][1] not in ['gt', 'eq', 'lt']:
                 raise ValueError(self.UNEXP_OP)
-                
+
             num_records = records[0][0]
             if self.expected[i][1] == 'eq':
                 if not num_records == self.expected[i][0]:
@@ -63,4 +63,3 @@ class DataQualityOperator(BaseOperator):
                 if not num_records < self.expected[i][0]:
                     raise ValueError(on_error_string + self.UNEXP_VALUE)
                 self.log.info(on_pass_string)
-                

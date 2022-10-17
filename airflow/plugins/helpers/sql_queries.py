@@ -1,11 +1,13 @@
+# help from: https://docs.aws.amazon.com/redshift/latest/dg/merge-replacing-existing-rows.html
+
 class SqlQueries:
     songplay_table_insert = """
     DELETE FROM songplays
-    USING (SELECT MIN(TIMESTAMP 'epoch' + ts/1000 * interval '1 second') AS start_time
+    USING (SELECT DISTINCT TIMESTAMP 'epoch' + ts/1000 * interval '1 second' AS start_time
            FROM staging_events
            WHERE page='NextSong') AS tmp
-    WHERE songplays.start_time >= tmp.start_time;
-    INSERT INTO songplays 
+    WHERE songplays.start_time = tmp.start_time;
+    INSERT INTO songplays
     (start_time, userid, level, songid, artistid, sessionid,
      location, user_agent)
     SELECT
@@ -30,20 +32,21 @@ class SqlQueries:
 
     user_table_insert = """
     DELETE FROM users
-    USING staging_events
-    WHERE users.userid = staging_events.userid AND
-          users.last_update < staging_events.ts;
-    INSERT INTO users (userid, last_update, first_name, 
+    USING (SELECT DISTINCT userid FROM staging_events WHERE page='NextSong') AS tmp
+    WHERE users.userid = tmp.userid;
+    INSERT INTO users (userid, first_name,
                        last_name, gender, level)
-        SELECT DISTINCT
+        SELECT
         userid,
-        ts,
         firstname,
         lastname,
         gender,
         level
-        FROM staging_events
-        WHERE page='NextSong';
+        FROM (SELECT *,
+              ROW_NUMBER() OVER (PARTITION by userid ORDER BY ts DESC) AS row_num
+              FROM staging_events
+              WHERE page='NextSong')
+        WHERE row_num = 1;
     """
 
     song_table_insert = """

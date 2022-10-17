@@ -39,10 +39,13 @@ class StageToRedshiftOperator(BaseOperator):
 
         self.log.info('StageToRedshiftOperator starting...')
 
-        prev_success = context.get('prev_ds')
+        prev_success = context.get('prev_execution_date_success')
         self.log.info("Previous Completion Interval Start: " + str(prev_success))
+
         if self.run_once and prev_success:
+            # if this task has been successful, do not run again
             self.log.info("Task Previously completed. Skipping.")
+
         else:
 
             aws_hook = AwsHook(self.aws_credentials_id)
